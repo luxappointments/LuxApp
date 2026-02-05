@@ -3,7 +3,9 @@ import { Manrope, Playfair_Display } from "next/font/google";
 import "./globals.css";
 import { GlobalHeader } from "@/components/layout/global-header";
 import { LocaleProvider } from "@/components/providers/locale-provider";
+import { OneSignalProvider } from "@/components/providers/onesignal-provider";
 import { getServerLocale } from "@/lib/i18n/server";
+import Script from "next/script";
 
 const manrope = Manrope({
   subsets: ["latin"],
@@ -26,7 +28,9 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   return (
     <html lang={locale} suppressHydrationWarning>
       <body className={`${manrope.variable} ${playfair.variable} antialiased`}>
+        <Script src="https://cdn.onesignal.com/sdks/OneSignalSDK.js" strategy="afterInteractive" />
         <LocaleProvider initialLocale={locale}>
+          <OneSignalProvider />
           <GlobalHeader />
           {children}
         </LocaleProvider>

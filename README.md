@@ -81,6 +81,15 @@ También incluye:
 - Cada 30 min: `POST /api/bookings/expire`
 - Cada 1 hora: `POST /api/notifications/reminders`
 
+## OneSignal (push notifications)
+Variables de entorno requeridas:
+- `NEXT_PUBLIC_ONESIGNAL_APP_ID`
+- `ONESIGNAL_REST_API_KEY`
+
+Archivos requeridos en `public/`:
+- `OneSignalSDKWorker.js`
+- `OneSignalSDKUpdaterWorker.js`
+
 ## Deploy checklist (Vercel)
 - Conectar repo a Vercel
 - Definir variables de entorno (igual a `.env.example`)
