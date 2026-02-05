@@ -40,12 +40,19 @@ export default function ProfilePage() {
         .eq("id", auth.user.id)
         .maybeSingle();
 
+      const profileData = profile as {
+        full_name?: string;
+        phone?: string;
+        role?: string;
+        avatar_url?: string;
+      } | null;
+
       setForm({
         email: auth.user.email || "",
-        fullName: profile?.full_name || auth.user.user_metadata?.full_name || "",
-        phone: profile?.phone || auth.user.user_metadata?.phone || "",
-        role: profile?.role || "client",
-        avatarUrl: profile?.avatar_url || ""
+        fullName: profileData?.full_name || auth.user.user_metadata?.full_name || "",
+        phone: profileData?.phone || auth.user.user_metadata?.phone || "",
+        role: profileData?.role || "client",
+        avatarUrl: profileData?.avatar_url || ""
       });
       setLoading(false);
     }
