@@ -12,6 +12,9 @@ type Appointment = {
   starts_at: string;
   status: string;
   client_email: string;
+  client_full_name?: string | null;
+  client_phone?: string | null;
+  client_avatar_url?: string | null;
   services?: { name?: string } | null;
 };
 
@@ -35,6 +38,7 @@ export default function CalendarPage() {
   const supabase = useMemo(() => getClientSupabase(), []);
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [loading, setLoading] = useState(true);
+  const [timeZone, setTimeZone] = useState<string | null>(null);
 
   async function authHeaders() {
     const { data } = await supabase.auth.getSession();
@@ -47,7 +51,10 @@ export default function CalendarPage() {
     async function load() {
       const res = await fetch("/api/dashboard/appointments?mode=week", { headers: await authHeaders() });
       const payload = await res.json();
-      if (res.ok) setAppointments(payload.appointments || []);
+      if (res.ok) {
+        setAppointments(payload.appointments || []);
+        setTimeZone(payload.timezone || null);
+      }
       setLoading(false);
     }
     load();
@@ -58,7 +65,7 @@ export default function CalendarPage() {
     date.setDate(date.getDate() + index);
     const items = appointments.filter((item) => {
       const d = new Date(item.starts_at);
-      return d.toDateString() === date.toDateString();
+      return d.toLocaleDateString("en-CA", { timeZone: timeZone || undefined }) === date.toLocaleDateString("en-CA", { timeZone: timeZone || undefined });
     });
     return { date, items };
   });
@@ -99,20 +106,45 @@ export default function CalendarPage() {
                     </p>
                   </div>
 
-                  <div className="space-y-2">
+                  <div className="space-y-3">
                     {items.length === 0 ? <p className="text-xs text-coolSilver">{tx("Sin citas", "No appointments")}</p> : null}
                     {items.map((item) => {
-                      const time = new Date(item.starts_at).toLocaleTimeString(locale === "en" ? "en-US" : "es-US", { hour: "2-digit", minute: "2-digit" });
+                      const time = new Date(item.starts_at).toLocaleTimeString(locale === "en" ? "en-US" : "es-US", {
+                        hour: "2-digit",
+                        minute: "2-digit",
+                        timeZone: timeZone || undefined
+                      });
+                      const initials = item.client_full_name
+                        ? item.client_full_name
+                            .split(" ")
+                            .map((chunk) => chunk[0])
+                            .join("")
+                            .slice(0, 2)
+                        : "NA";
                       return (
-                        <div key={item.id} className="rounded-xl border border-gold/20 bg-gradient-to-r from-gold/10 to-transparent p-2 text-xs text-coolSilver">
+                        <div key={item.id} className="rounded-2xl border border-gold/20 bg-gradient-to-r from-gold/10 to-transparent p-3 text-xs text-coolSilver">
                           <div className="flex items-center justify-between gap-2">
                             <p className="font-semibold text-softGold">{time}</p>
                             <span className={`rounded-full border px-2 py-0.5 text-[10px] ${statusStyles[item.status] || "bg-silver/10 text-coolSilver border-silver/30"}`}>
                               {item.status}
                             </span>
                           </div>
-                          <p className="mt-1 text-textWhite">{item.services?.name || tx("Servicio", "Service")}</p>
-                          <p className="truncate text-mutedText">{item.client_email}</p>
+                          <p className="mt-2 text-textWhite">{item.services?.name || tx("Servicio", "Service")}</p>
+                          <div className="mt-2 flex items-center gap-2">
+                            {item.client_avatar_url ? (
+                              <img src={item.client_avatar_url} alt={item.client_full_name || "Cliente"} className="h-7 w-7 rounded-lg object-cover" />
+                            ) : (
+                              <div className="flex h-7 w-7 items-center justify-center rounded-lg border border-silver/20 text-[10px] text-coolSilver">
+                                {initials}
+                              </div>
+                            )}
+                            <div className="min-w-0">
+                              <p className="truncate text-textWhite">{item.client_full_name || tx("Cliente", "Client")}</p>
+                              {item.client_phone ? (
+                                <p className="truncate text-[10px] text-mutedText">{item.client_phone}</p>
+                              ) : null}
+                            </div>
+                          </div>
                         </div>
                       );
                     })}
