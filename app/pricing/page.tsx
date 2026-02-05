@@ -62,7 +62,8 @@ export default function PricingPage() {
         .eq("id", auth.user.id)
         .maybeSingle();
 
-      const isBusinessRole = profile?.role === "owner" || profile?.role === "staff" || profile?.role === "admin";
+      const role = (profile as { role?: string } | null)?.role;
+      const isBusinessRole = role === "owner" || role === "staff" || role === "admin";
       const isBusinessMetadata = auth.user.user_metadata?.account_type === "business";
 
       if (mounted) {
