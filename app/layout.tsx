@@ -19,7 +19,16 @@ const playfair = Playfair_Display({
 
 export const metadata: Metadata = {
   title: "LuxApp | Citas Premium para Servicios",
-  description: "Plataforma SaaS multi-tenant de reservas premium para negocios de servicios locales"
+  description: "Plataforma SaaS multi-tenant de reservas premium para negocios de servicios locales",
+  manifest: "/manifest.webmanifest",
+  themeColor: "#0B0B0F",
+  icons: {
+    icon: [
+      { url: "/icons/icon-192.png", sizes: "192x192", type: "image/png" },
+      { url: "/icons/icon-512.png", sizes: "512x512", type: "image/png" }
+    ],
+    apple: [{ url: "/icons/icon-192.png", sizes: "192x192", type: "image/png" }]
+  }
 };
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
