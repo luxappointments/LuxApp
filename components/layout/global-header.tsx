@@ -66,6 +66,7 @@ export function GlobalHeader() {
     ? "/dashboard/overview"
     : "/client/appointments";
   const canSeePricing = role === "owner" || role === "staff" || role === "admin" || user?.user_metadata?.account_type === "business";
+  const isAdmin = role === "admin";
 
   const displayName = user?.user_metadata?.full_name || user?.email || t("nav.profile");
   const initials = displayName
@@ -129,6 +130,11 @@ export function GlobalHeader() {
               <Button asChild size="sm" variant="secondary">
                 <Link href={panelHref}>{t("nav.panel")}</Link>
               </Button>
+              {isAdmin ? (
+                <Button asChild size="sm" variant="secondary">
+                  <Link href="/admin">Admin</Link>
+                </Button>
+              ) : null}
               <Button onClick={handleLogout} size="sm" disabled={loadingLogout}>
                 {loadingLogout ? `${t("common.loading")}` : t("nav.logout")}
               </Button>

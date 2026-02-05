@@ -16,6 +16,10 @@ export default function ProfilePage() {
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [userId, setUserId] = useState<string>("");
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [savingPassword, setSavingPassword] = useState(false);
+  const [passwordMessage, setPasswordMessage] = useState<string | null>(null);
   const [form, setForm] = useState({
     email: "",
     fullName: "",
@@ -85,6 +89,33 @@ export default function ProfilePage() {
 
     setSaving(false);
     setMessage(tx("Perfil actualizado.", "Profile updated."));
+  }
+
+  async function onChangePassword(e: FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    setSavingPassword(true);
+    setPasswordMessage(null);
+
+    if (password.length < 6) {
+      setPasswordMessage(tx("La contraseña debe tener al menos 6 caracteres.", "Password must be at least 6 characters."));
+      setSavingPassword(false);
+      return;
+    }
+    if (password !== confirmPassword) {
+      setPasswordMessage(tx("Las contraseñas no coinciden.", "Passwords do not match."));
+      setSavingPassword(false);
+      return;
+    }
+
+    const { error } = await supabase.auth.updateUser({ password });
+    if (error) {
+      setPasswordMessage(error.message);
+    } else {
+      setPassword("");
+      setConfirmPassword("");
+      setPasswordMessage(tx("Contraseña actualizada.", "Password updated."));
+    }
+    setSavingPassword(false);
   }
 
   async function onUploadAvatar(file: File) {
@@ -168,6 +199,34 @@ export default function ProfilePage() {
         )}
 
         {message ? <p className="mt-3 text-sm text-coolSilver">{message}</p> : null}
+
+        {userId ? (
+          <div className="mt-6 border-t border-gold/20 pt-6">
+            <h2 className="font-display text-2xl">{tx("Cambiar contraseña", "Change password")}</h2>
+            <form className="mt-3 space-y-3" onSubmit={onChangePassword}>
+              <Input
+                placeholder={tx("Nueva contraseña", "New password")}
+                type="password"
+                minLength={6}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+              />
+              <Input
+                placeholder={tx("Confirmar contraseña", "Confirm password")}
+                type="password"
+                minLength={6}
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                required
+              />
+              <Button className="w-full" disabled={savingPassword}>
+                {savingPassword ? tx("Guardando...", "Saving...") : tx("Actualizar contraseña", "Update password")}
+              </Button>
+            </form>
+            {passwordMessage ? <p className="mt-3 text-sm text-coolSilver">{passwordMessage}</p> : null}
+          </div>
+        ) : null}
       </Card>
     </main>
   );
