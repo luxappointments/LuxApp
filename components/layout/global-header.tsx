@@ -18,6 +18,7 @@ export function GlobalHeader() {
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [loadingLogout, setLoadingLogout] = useState(false);
   const [logoError, setLogoError] = useState(false);
+  const [appointmentsBadge, setAppointmentsBadge] = useState<number>(0);
 
   useEffect(() => {
     let mounted = true;
@@ -55,6 +56,34 @@ export function GlobalHeader() {
       sub.subscription.unsubscribe();
     };
   }, [supabase]);
+
+  useEffect(() => {
+    let active = true;
+
+    async function loadAlerts() {
+      if (!user || !(role === "owner" || role === "staff" || role === "admin" || user.user_metadata?.account_type === "business")) {
+        if (active) setAppointmentsBadge(0);
+        return;
+      }
+
+      const { data } = await supabase.auth.getSession();
+      const token = data.session?.access_token;
+      if (!token) return;
+
+      const res = await fetch("/api/dashboard/alerts", {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      const payload = await res.json();
+      if (!res.ok) return;
+      const unread = (payload.alerts || []).filter((alert: any) => !alert.read_at);
+      if (active) setAppointmentsBadge(unread.length);
+    }
+
+    loadAlerts();
+    return () => {
+      active = false;
+    };
+  }, [supabase, user, role]);
 
   async function handleLogout() {
     setLoadingLogout(true);
@@ -116,6 +145,19 @@ export function GlobalHeader() {
           </button>
           {user ? (
             <>
+              {(role === "owner" || role === "staff" || role === "admin" || user?.user_metadata?.account_type === "business") ? (
+                <Link
+                  href="/dashboard/appointments"
+                  className="relative inline-flex items-center gap-2 rounded-lg border border-gold/20 px-3 py-2 text-xs text-softGold hover:bg-gold/10"
+                >
+                  {tx("Citas", "Appointments")}
+                  {appointmentsBadge > 0 ? (
+                    <span className="rounded-full bg-softGold px-2 py-0.5 text-[10px] font-semibold text-black">
+                      {appointmentsBadge > 9 ? "9+" : appointmentsBadge}
+                    </span>
+                  ) : null}
+                </Link>
+              ) : null}
               <Link
                 href="/profile"
                 className="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-gold/30 bg-black/50 text-xs font-semibold text-softGold"
