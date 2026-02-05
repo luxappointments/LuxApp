@@ -11,6 +11,7 @@ import { getClientSupabase } from "@/lib/supabase/client";
 type Service = {
   id: string;
   name: string;
+  category?: string | null;
   description: string | null;
   duration_min: number;
   buffer_before_min: number;
@@ -26,6 +27,7 @@ type Service = {
 const emptyForm = {
   id: "",
   name: "",
+  category: "",
   description: "",
   duration_min: 30,
   buffer_before_min: 0,
@@ -45,6 +47,9 @@ export default function ServicesPage() {
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [uploadingId, setUploadingId] = useState<string | null>(null);
+  const categories = Array.from(
+    new Set(services.map((item) => item.category).filter((value): value is string => Boolean(value)))
+  );
 
   async function getAuthHeader() {
     const { data } = await supabase.auth.getSession();
@@ -174,6 +179,21 @@ export default function ServicesPage() {
             </label>
           </div>
           <label className="text-sm text-coolSilver">
+            {tx("Categoría (opcional)", "Category (optional)")}
+            <Input
+              className="mt-1"
+              placeholder={tx("Ej: Uñas manos, Uñas pies", "Ex: Nails hands, Nails feet")}
+              value={form.category}
+              onChange={(e) => setForm({ ...form, category: e.target.value })}
+              list="service-categories"
+            />
+          </label>
+          <datalist id="service-categories">
+            {categories.map((cat) => (
+              <option key={cat} value={cat} />
+            ))}
+          </datalist>
+          <label className="text-sm text-coolSilver">
             {tx("Descripción (opcional)", "Description (optional)")}
             <Input className="mt-1" placeholder={tx("Describe qué incluye este servicio", "Describe what this service includes")} value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} />
           </label>
@@ -226,6 +246,7 @@ export default function ServicesPage() {
                 <p className="text-textWhite">
                   {service.name} · {service.price_starts_at ? `${tx("Desde", "From")} $${(service.price_cents / 100).toFixed(2)}` : `$${(service.price_cents / 100).toFixed(2)}`}
                 </p>
+                {service.category ? <p className="text-xs text-softGold">{service.category}</p> : null}
                 <p className="text-mutedText">{service.duration_min} min · {tx("buffers", "buffers")} {service.buffer_before_min}/{service.buffer_after_min}</p>
                 <div className="mt-2 flex items-center gap-3">
                   {service.image_url ? (
@@ -251,6 +272,7 @@ export default function ServicesPage() {
                 <Button variant="secondary" size="sm" onClick={() => setForm({
                   id: service.id,
                   name: service.name,
+                  category: service.category || "",
                   description: service.description || "",
                   duration_min: service.duration_min,
                   buffer_before_min: service.buffer_before_min,

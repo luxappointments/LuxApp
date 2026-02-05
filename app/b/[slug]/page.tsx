@@ -95,24 +95,40 @@ export default async function BusinessPage({ params }: { params: Promise<{ slug:
         <Card>
           <h2 className="font-display text-2xl">{tx("Servicios", "Services")}</h2>
           <div className="mt-4 space-y-3 text-sm text-coolSilver">
-            {services.map((service) => (
-              <div key={service.id} className="flex items-center justify-between gap-3 rounded-xl border border-silver/20 bg-black/40 p-3">
-                <div className="flex items-center gap-3">
-                  {service.image_url ? (
-                    <Image src={service.image_url} alt={service.name} width={44} height={44} className="h-11 w-11 rounded-xl object-cover" />
-                  ) : (
-                    <div className="flex h-11 w-11 items-center justify-center rounded-xl border border-silver/20 text-xs text-coolSilver">
-                      {tx("Sin foto", "No photo")}
+            {Object.entries(
+              services.reduce((acc: Record<string, typeof services>, service) => {
+                const key = service.category || tx("Sin categoría", "Uncategorized");
+                if (!acc[key]) acc[key] = [];
+                acc[key].push(service);
+                return acc;
+              }, {})
+            ).map(([category, items]) => (
+              <details key={category} className="rounded-2xl border border-silver/20 bg-black/40 p-3" open>
+                <summary className="cursor-pointer text-softGold">
+                  {category} · {items.length}
+                </summary>
+                <div className="mt-3 space-y-3">
+                  {items.map((service) => (
+                    <div key={service.id} className="flex items-center justify-between gap-3 rounded-xl border border-silver/20 bg-black/40 p-3">
+                      <div className="flex items-center gap-3">
+                        {service.image_url ? (
+                          <Image src={service.image_url} alt={service.name} width={44} height={44} className="h-11 w-11 rounded-xl object-cover" />
+                        ) : (
+                          <div className="flex h-11 w-11 items-center justify-center rounded-xl border border-silver/20 text-xs text-coolSilver">
+                            {tx("Sin foto", "No photo")}
+                          </div>
+                        )}
+                        <p>{service.name}</p>
+                      </div>
+                      <p>
+                        {service.price_starts_at
+                          ? `${tx("Desde", "From")} ${(service.price_cents / 100).toLocaleString("en-US", { style: "currency", currency: "USD" })}`
+                          : (service.price_cents / 100).toLocaleString("en-US", { style: "currency", currency: "USD" })}
+                      </p>
                     </div>
-                  )}
-                  <p>{service.name}</p>
+                  ))}
                 </div>
-                <p>
-                  {service.price_starts_at
-                    ? `${tx("Desde", "From")} ${(service.price_cents / 100).toLocaleString("en-US", { style: "currency", currency: "USD" })}`
-                    : (service.price_cents / 100).toLocaleString("en-US", { style: "currency", currency: "USD" })}
-                </p>
-              </div>
+              </details>
             ))}
           </div>
         </Card>

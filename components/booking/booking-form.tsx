@@ -14,6 +14,7 @@ import type { SlotOption } from "@/types/domain";
 type ServiceItem = {
   id: string;
   name: string;
+  category?: string | null;
   duration_min: number;
   price_cents: number;
   price_starts_at?: boolean;
@@ -53,6 +54,7 @@ export function BookingForm({
   const { t, tx } = useLocale();
   const supabase = useMemo(() => getClientSupabase(), []);
   const [selectedServiceIds, setSelectedServiceIds] = useState<string[]>(services[0]?.id ? [services[0].id] : []);
+  const [activeCategory, setActiveCategory] = useState<string>("all");
   const [selectedStaffId, setSelectedStaffId] = useState<string>(staff[0]?.id || "");
   const [guestCount, setGuestCount] = useState(0);
   const [selectedSlotKey, setSelectedSlotKey] = useState<string | null>(null);
@@ -75,6 +77,19 @@ export function BookingForm({
     () => services.filter((item) => selectedServiceIds.includes(item.id)),
     [services, selectedServiceIds]
   );
+
+  const categoryOptions = useMemo(() => {
+    const set = new Set<string>();
+    services.forEach((item) => {
+      if (item.category) set.add(item.category);
+    });
+    return ["all", ...Array.from(set)];
+  }, [services]);
+
+  const visibleServices = useMemo(() => {
+    if (activeCategory === "all") return services;
+    return services.filter((item) => item.category === activeCategory);
+  }, [services, activeCategory]);
 
   const basePriceCents = useMemo(
     () => selectedServices.reduce((acc, item) => acc + (item.price_cents || 0), 0),
@@ -284,7 +299,21 @@ export function BookingForm({
           <h2 className="font-display text-2xl">1. {t("booking.service")}</h2>
           <p className="mt-1 text-sm text-mutedText">{tx("Selecciona el servicio ideal para tu cita.", "Select the ideal service for your appointment.")}</p>
           <div className="mt-4 space-y-2 text-sm text-coolSilver">
-            {services.map((service) => (
+            <div className="flex flex-wrap gap-2 pb-2">
+              {categoryOptions.map((cat) => (
+                <button
+                  key={cat}
+                  type="button"
+                  onClick={() => setActiveCategory(cat)}
+                  className={`rounded-full border px-3 py-1 text-xs ${
+                    activeCategory === cat ? "border-softGold bg-gold/10 text-softGold" : "border-silver/20 text-coolSilver hover:border-softGold"
+                  }`}
+                >
+                  {cat === "all" ? tx("Todas", "All") : cat}
+                </button>
+              ))}
+            </div>
+            {visibleServices.map((service) => (
               <button
                 key={service.id}
                 type="button"

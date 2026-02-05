@@ -6,6 +6,7 @@ import { getDashboardContext } from "@/lib/server/dashboard-auth";
 
 const createSchema = z.object({
   name: z.string().min(2),
+  category: z.string().optional(),
   description: z.string().optional(),
   duration_min: z.number().int().min(5).max(600),
   buffer_before_min: z.number().int().min(0).max(120),
@@ -25,7 +26,7 @@ export async function GET(req: Request) {
   const admin = getAdminSupabase();
   const { data, error: queryError } = await admin
     .from("services")
-    .select("id, name, description, duration_min, buffer_before_min, buffer_after_min, price_cents, price_starts_at, image_url, requires_confirmation, requires_payment, is_active, sort_order")
+    .select("id, name, category, description, duration_min, buffer_before_min, buffer_after_min, price_cents, price_starts_at, image_url, requires_confirmation, requires_payment, is_active, sort_order")
     .eq("business_id", ctx.businessId)
     .order("sort_order", { ascending: true });
 
@@ -58,7 +59,7 @@ export async function POST(req: Request) {
       sort_order: (max?.sort_order ?? 0) + 10,
       is_active: true
     })
-    .select("id, name, description, duration_min, buffer_before_min, buffer_after_min, price_cents, price_starts_at, image_url, requires_confirmation, requires_payment, is_active, sort_order")
+    .select("id, name, category, description, duration_min, buffer_before_min, buffer_after_min, price_cents, price_starts_at, image_url, requires_confirmation, requires_payment, is_active, sort_order")
     .single();
 
   if (insertError) return NextResponse.json({ error: insertError.message }, { status: 400 });
@@ -81,7 +82,7 @@ export async function PUT(req: Request) {
     .update(updates)
     .eq("id", id)
     .eq("business_id", ctx.businessId)
-    .select("id, name, description, duration_min, buffer_before_min, buffer_after_min, price_cents, price_starts_at, image_url, requires_confirmation, requires_payment, is_active, sort_order")
+    .select("id, name, category, description, duration_min, buffer_before_min, buffer_after_min, price_cents, price_starts_at, image_url, requires_confirmation, requires_payment, is_active, sort_order")
     .single();
 
   if (updateError) return NextResponse.json({ error: updateError.message }, { status: 400 });

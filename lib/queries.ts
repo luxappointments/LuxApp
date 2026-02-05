@@ -47,7 +47,7 @@ export async function getBusinessBySlug(slug: string) {
     const [{ data: services }, { data: staff }, { data: policies }, { data: paymentMethods }, { data: ownerProfile }, { data: reviews }, { data: specials }] = await Promise.all([
       supabase
         .from("services")
-        .select("id, name, description, duration_min, buffer_before_min, buffer_after_min, price_cents, price_starts_at, image_url, requires_confirmation, requires_payment, is_active, sort_order")
+        .select("id, name, category, description, duration_min, buffer_before_min, buffer_after_min, price_cents, price_starts_at, image_url, requires_confirmation, requires_payment, is_active, sort_order")
         .eq("business_id", business.id)
         .eq("is_active", true)
         .order("sort_order", { ascending: true }),
