@@ -39,7 +39,7 @@ export async function GET(req: Request) {
   const admin = getAdminSupabase();
   const { data, error: queryError } = await admin
     .from("appointments")
-    .select("id, starts_at, status, client_email, customer_id, required_deposit_percent, required_deposit_cents, total_price_cents, external_payment_method, external_payment_status, external_payment_proof_url, services(name), staff_profiles(display_name)")
+    .select("id, starts_at, status, client_email, customer_id, required_deposit_percent, required_deposit_cents, total_price_cents, external_payment_method, external_payment_status, external_payment_proof_url, services!appointments_service_id_fkey(name), staff_profiles(display_name)")
     .eq("business_id", ctx.businessId)
     .gte("starts_at", rangeStart.toISOString())
     .lte("starts_at", rangeEnd.toISOString())

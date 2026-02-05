@@ -27,7 +27,7 @@ export async function POST(req: Request) {
 
     const { data: appointments } = await supabase
       .from("appointments")
-      .select("id, client_email, starts_at, businesses(name), services(name)")
+      .select("id, client_email, starts_at, businesses!appointments_business_id_fkey(name), services!appointments_service_id_fkey(name)")
       .in("status", ["confirmed", "paid"])
       .gte("starts_at", targetStart)
       .lte("starts_at", targetEnd);
