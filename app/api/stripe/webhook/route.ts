@@ -1,7 +1,7 @@
 import { headers } from "next/headers";
 import { NextResponse } from "next/server";
 
-import { stripe } from "@/lib/billing/stripe";
+import { getStripe } from "@/lib/billing/stripe";
 import { getAdminSupabase } from "@/lib/supabase/admin";
 
 export async function POST(req: Request) {
@@ -11,6 +11,9 @@ export async function POST(req: Request) {
   if (!signature) {
     return NextResponse.json({ error: "Missing signature" }, { status: 400 });
   }
+
+  const stripe = getStripe();
+  if (!stripe) return NextResponse.json({ error: "Missing STRIPE_SECRET_KEY" }, { status: 500 });
 
   let event;
 

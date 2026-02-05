@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 
 import { getStripePriceId } from "@/lib/billing/plans";
-import { stripe } from "@/lib/billing/stripe";
+import { getStripe } from "@/lib/billing/stripe";
 
 const schema = z.object({
   mode: z.enum(["subscription", "deposit"]),
@@ -23,6 +23,8 @@ export async function POST(req: Request) {
   }
 
   const input = parsed.data;
+  const stripe = getStripe();
+  if (!stripe) return NextResponse.json({ error: "Missing STRIPE_SECRET_KEY" }, { status: 500 });
 
   if (input.mode === "subscription") {
     if (!input.plan || !input.interval) {
