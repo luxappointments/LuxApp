@@ -189,6 +189,20 @@ export default function AppointmentsPage() {
     await loadAppointments();
   }
 
+  async function deleteAppointment(appointmentId: string) {
+    const res = await fetch(`/api/dashboard/appointments?id=${appointmentId}` , {
+      method: "DELETE",
+      headers: await authHeaders()
+    });
+    const payload = await res.json();
+    if (!res.ok) {
+      setMessage(payload.error || tx("No se pudo borrar la cita.", "Could not delete appointment."));
+      return;
+    }
+    setMessage(tx("Cita eliminada.", "Appointment deleted."));
+    await loadAppointments();
+  }
+
   return (
     <>
       <h1 className="font-display text-4xl">{tx("Citas del día", "Today's appointments")}</h1>
@@ -331,6 +345,11 @@ export default function AppointmentsPage() {
                     {label}
                   </Button>
                 ))}
+                {new Date(item.starts_at) < new Date() ? (
+                  <Button size="sm" variant="secondary" onClick={() => deleteAppointment(item.id)}>
+                    {tx("Borrar", "Delete")}
+                  </Button>
+                ) : null}
               </div>
             </div>
           ))}

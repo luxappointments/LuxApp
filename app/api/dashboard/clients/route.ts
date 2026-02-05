@@ -27,7 +27,8 @@ export async function GET(req: Request) {
     { data: stats, error: statsError },
     { data: blacklists, error: blError },
     { data: manualClients, error: manualError },
-    { data: reminders, error: remindersError }
+    { data: reminders, error: remindersError },
+    { data: deletedClients, error: deletedError }
   ] = await Promise.all([
     admin
       .from("appointments")
@@ -52,7 +53,11 @@ export async function GET(req: Request) {
       .from("business_client_reminders")
       .select("id, client_email, note, remind_at, status, created_at")
       .eq("business_id", ctx.businessId)
-      .order("created_at", { ascending: false })
+      .order("created_at", { ascending: false }),
+    admin
+      .from("business_deleted_clients")
+      .select("email, deleted_at")
+      .eq("business_id", ctx.businessId)
   ]);
 
   if (apptsError) return NextResponse.json({ error: apptsError.message }, { status: 400 });
@@ -60,6 +65,7 @@ export async function GET(req: Request) {
   if (blError) return NextResponse.json({ error: blError.message }, { status: 400 });
   if (manualError) return NextResponse.json({ error: manualError.message }, { status: 400 });
   if (remindersError) return NextResponse.json({ error: remindersError.message }, { status: 400 });
+  if (deletedError) return NextResponse.json({ error: deletedError.message }, { status: 400 });
 
   const emails = Array.from(new Set((appts || []).map((a) => a.client_email)));
   const userIds = Array.from(new Set((appts || []).map((a) => a.customer_id).filter(Boolean)));
@@ -80,10 +86,13 @@ export async function GET(req: Request) {
     list.push(reminder);
     reminderMap.set(reminder.client_email, list);
   }
+  const deletedMap = new Map<string, string>((deletedClients || []).map((d) => [d.email, d.deleted_at]));
 
   const grouped = new Map<string, any>();
 
   for (const manual of manualClients || []) {
+    const deletedAt = deletedMap.get(manual.email);
+    if (deletedAt) continue;
       grouped.set(manual.email, {
       email: manual.email,
       full_name: manual.full_name || manual.email,
@@ -106,6 +115,10 @@ export async function GET(req: Request) {
 
   for (const appt of appts || []) {
     const email = appt.client_email;
+    const deletedAt = deletedMap.get(email);
+    if (deletedAt && new Date(appt.starts_at) <= new Date(deletedAt)) {
+      continue;
+    }
     const profile = (appt.customer_id && profileMapById.get(appt.customer_id)) || profileMapByEmail.get(email);
     if (!grouped.has(email)) {
       grouped.set(email, {
@@ -227,6 +240,10 @@ export async function DELETE(req: Request) {
   if (!email) return NextResponse.json({ error: "Email requerido" }, { status: 400 });
 
   const admin = getAdminSupabase();
+  await admin
+    .from("business_deleted_clients")
+    .upsert({ business_id: ctx.businessId, email, deleted_at: new Date().toISOString() });
+
   const { error: deleteClientError } = await admin
     .from("business_clients")
     .delete()

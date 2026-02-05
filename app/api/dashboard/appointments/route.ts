@@ -129,3 +129,22 @@ export async function POST(req: Request) {
   });
   return NextResponse.json({ appointment: data });
 }
+
+export async function DELETE(req: Request) {
+  const { ctx, error, status } = await getDashboardContext(req);
+  if (!ctx) return NextResponse.json({ error }, { status: status || 400 });
+
+  const id = new URL(req.url).searchParams.get("id");
+  if (!id) return NextResponse.json({ error: "ID requerido" }, { status: 400 });
+
+  const admin = getAdminSupabase();
+  const { error: deleteError } = await admin
+    .from("appointments")
+    .delete()
+    .eq("id", id)
+    .eq("business_id", ctx.businessId);
+
+  if (deleteError) return NextResponse.json({ error: deleteError.message }, { status: 400 });
+
+  return NextResponse.json({ ok: true });
+}
