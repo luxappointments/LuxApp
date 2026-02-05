@@ -1,0 +1,5 @@
+### Expire pending payments (run every 30m)
+POST http://localhost:3000/api/bookings/expire
+
+### Send reminders (run hourly)
+POST http://localhost:3000/api/notifications/reminders

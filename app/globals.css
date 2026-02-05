@@ -1,0 +1,52 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --bg: #0b0b0f;
+  --card: #111118;
+  --gold: #d4af37;
+  --soft-gold: #f5d77a;
+  --silver: #c0c0c0;
+  --cool-silver: #b8b8c7;
+  --text: #f7f7fb;
+  --muted: #a0a0b2;
+}
+
+* {
+  border-color: rgba(212, 175, 55, 0.24);
+}
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: "Manrope", system-ui, sans-serif;
+  min-height: 100vh;
+  background-image: radial-gradient(circle at 10% 10%, rgba(212, 175, 55, 0.2), transparent 35%), radial-gradient(circle at 90% 20%, rgba(184, 184, 199, 0.16), transparent 28%);
+}
+
+.lux-card {
+  background: linear-gradient(160deg, rgba(17, 17, 24, 0.98), rgba(11, 11, 15, 0.92));
+  border: 1px solid rgba(212, 175, 55, 0.22);
+  border-radius: 1.25rem;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(245, 215, 122, 0.08);
+}
+
+.gold-gradient {
+  background: linear-gradient(135deg, #d4af37, #f5d77a);
+}
+
+.skeleton {
+  animation: pulse 1.8s ease-in-out infinite;
+  background: linear-gradient(90deg, rgba(160, 160, 178, 0.12), rgba(192, 192, 192, 0.24), rgba(160, 160, 178, 0.12));
+  background-size: 200% 100%;
+}
+
+@keyframes pulse {
+  0% {
+    background-position: 100% 0;
+  }
+  100% {
+    background-position: -100% 0;
+  }
+}

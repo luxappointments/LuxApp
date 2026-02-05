@@ -1,0 +1,12 @@
+{
+  "crons": [
+    {
+      "path": "/api/bookings/expire",
+      "schedule": "*/30 * * * *"
+    },
+    {
+      "path": "/api/notifications/reminders",
+      "schedule": "0 * * * *"
+    }
+  ]
+}
