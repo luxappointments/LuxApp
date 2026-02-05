@@ -190,6 +190,8 @@ export default function AppointmentsPage() {
   }
 
   async function deleteAppointment(appointmentId: string) {
+    const ok = window.confirm(tx("¿Eliminar esta cita? Esta acción no se puede deshacer.", "Delete this appointment? This cannot be undone."));
+    if (!ok) return;
     const res = await fetch(`/api/dashboard/appointments?id=${appointmentId}` , {
       method: "DELETE",
       headers: await authHeaders()
@@ -345,11 +347,9 @@ export default function AppointmentsPage() {
                     {label}
                   </Button>
                 ))}
-                {new Date(item.starts_at) < new Date() ? (
-                  <Button size="sm" variant="secondary" onClick={() => deleteAppointment(item.id)}>
-                    {tx("Borrar", "Delete")}
-                  </Button>
-                ) : null}
+                <Button size="sm" variant="secondary" onClick={() => deleteAppointment(item.id)}>
+                  {tx("Borrar", "Delete")}
+                </Button>
               </div>
             </div>
           ))}
