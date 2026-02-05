@@ -95,3 +95,4 @@ También incluye:
 ## White-label
 - Branding centralizado vía tokens en `app/globals.css` y `tailwind.config.ts`
 - Fácil rebranding: colores, logo y copy sin tocar lógica core
+# LuxApp
