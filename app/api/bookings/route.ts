@@ -6,7 +6,6 @@ import { z } from "zod";
 import { getRequiredDepositPercent } from "@/lib/booking/risk";
 import { sendAppointmentStatusEmail } from "@/lib/notifications/email";
 import { createBusinessNotification } from "@/lib/notifications/in-app";
-import { createBusinessNotification } from "@/lib/notifications/in-app";
 import { getAdminSupabase } from "@/lib/supabase/admin";
 
 const schema = z.object({
