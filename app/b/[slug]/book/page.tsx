@@ -223,24 +223,34 @@ export default async function BookPage({ params }: { params: Promise<{ slug: str
                   : "") ||
                 (item.method === "zelle" ? "https://www.zellepay.com/" : "");
 
+              const maskedAccount = item.account_value
+                ? item.account_value.length > 6
+                  ? `${item.account_value.slice(0, 2)}•••${item.account_value.slice(-2)}`
+                  : `${item.account_value.slice(0, 1)}•••`
+                : null;
+
               return (
                 <div key={item.method} className="rounded-2xl border border-silver/20 bg-black/40 p-3">
                   <p className={`text-sm font-semibold ${brand.color}`}>
                     <span className="mr-2">{brand.icon}</span>
                     {brand.label}
                   </p>
-                  {item.account_value ? <p className="mt-1 text-sm text-textWhite">{item.account_value}</p> : null}
+                  {maskedAccount ? <p className="mt-1 text-sm text-coolSilver">{maskedAccount}</p> : null}
                   {item.notes ? <p className="mt-1 text-xs text-mutedText">{item.notes}</p> : null}
                   {href ? (
                     <a
-                      className="mt-2 inline-flex rounded-xl border border-gold/30 px-3 py-1 text-xs text-softGold hover:bg-gold/10"
+                      className="mt-2 inline-flex text-xs text-softGold underline-offset-4 hover:underline"
                       href={href}
                       target="_blank"
                       rel="noreferrer"
                     >
-                      {tx("Abrir", "Open")} {brand.label}
+                      {tx("Ver instrucciones", "View instructions")}
                     </a>
-                  ) : null}
+                  ) : (
+                    <span className="mt-2 inline-flex text-xs text-mutedText">
+                      {tx("Ver instrucciones", "View instructions")}
+                    </span>
+                  )}
                 </div>
               );
             })
