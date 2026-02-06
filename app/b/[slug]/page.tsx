@@ -113,11 +113,7 @@ export default async function BusinessPage({ params }: { params: Promise<{ slug:
                       <div className="flex items-center gap-3">
                         {service.image_url ? (
                           <Image src={service.image_url} alt={service.name} width={44} height={44} className="h-11 w-11 rounded-xl object-cover" />
-                        ) : (
-                          <div className="flex h-11 w-11 items-center justify-center rounded-xl border border-silver/20 text-xs text-coolSilver">
-                            {tx("Sin foto", "No photo")}
-                          </div>
-                        )}
+                        ) : null}
                         <p>{service.name}</p>
                       </div>
                       <p>

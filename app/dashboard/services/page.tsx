@@ -251,11 +251,7 @@ export default function ServicesPage() {
                 <div className="mt-2 flex items-center gap-3">
                   {service.image_url ? (
                     <img src={service.image_url} alt={service.name} className="h-12 w-12 rounded-xl border border-silver/30 object-cover" />
-                  ) : (
-                    <div className="flex h-12 w-12 items-center justify-center rounded-xl border border-silver/30 text-xs text-coolSilver">
-                      {tx("Sin foto", "No photo")}
-                    </div>
-                  )}
+                  ) : null}
                   <Input
                     type="file"
                     accept="image/*"
