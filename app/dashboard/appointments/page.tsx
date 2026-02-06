@@ -327,12 +327,17 @@ export default function AppointmentsPage() {
                   </p>
                   </div>
                 </div>
-                <Badge className={`inline-flex items-center gap-1.5 ${statusMeta[String(item.status || "").toLowerCase()]?.className || "bg-silver/10 text-coolSilver border-silver/30"}`}>
-                  {statusMeta[String(item.status || "").toLowerCase()]?.Icon ? (
-                    <statusMeta[String(item.status || "").toLowerCase()]!.Icon className="h-3.5 w-3.5" />
-                  ) : null}
-                  <span>{statusMeta[String(item.status || "").toLowerCase()]?.label || formatStatus(String(item.status || ""))}</span>
-                </Badge>
+                {(() => {
+                  const key = String(item.status || "").toLowerCase();
+                  const meta = statusMeta[key];
+                  const Icon = meta?.Icon;
+                  return (
+                    <Badge className={`inline-flex items-center gap-1.5 ${meta?.className || "bg-silver/10 text-coolSilver border-silver/30"}`}>
+                      {Icon ? <Icon className="h-3.5 w-3.5" /> : null}
+                      <span>{meta?.label || formatStatus(String(item.status || ""))}</span>
+                    </Badge>
+                  );
+                })()}
               </div>
               <p className="mt-2 text-xs text-coolSilver">{tx("Depósito requerido", "Required deposit")}: {item.required_deposit_percent}%</p>
               {item.external_payment_status === "submitted" && item.external_payment_proof_url ? (
