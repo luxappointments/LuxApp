@@ -255,7 +255,7 @@ export default function ClientAppointmentsPage() {
                 ) : null}
               </div>
 
-              {item.status === "awaiting_payment" ? (
+              {deposit > 0 && !["paid", "completed", "canceled_by_client", "canceled_by_business", "no_show"].includes(normalizedStatus) ? (
                 <div id={`pay-${item.id}`} className="mt-3 space-y-2">
                   <div className="flex items-center justify-between rounded-2xl border border-gold/30 bg-gold/10 px-4 py-2 text-sm text-softGold">
                     <span className="inline-flex items-center gap-2">
