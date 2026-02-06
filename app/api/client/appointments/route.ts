@@ -30,11 +30,21 @@ export async function GET(req: Request) {
     .in("business_id", businessIds)
     .eq("is_enabled", true);
 
+  const { data: policies } = await admin
+    .from("business_policies")
+    .select("business_id, min_cancel_minutes")
+    .in("business_id", businessIds);
+
+  const policiesByBusiness = (policies || []).reduce((acc: Record<string, any>, item: any) => {
+    acc[item.business_id] = item;
+    return acc;
+  }, {});
+
   const methodsByBusiness = (methods || []).reduce((acc: Record<string, any[]>, item: any) => {
     if (!acc[item.business_id]) acc[item.business_id] = [];
     acc[item.business_id].push(item);
     return acc;
   }, {});
 
-  return NextResponse.json({ appointments: appointments || [], methodsByBusiness });
+  return NextResponse.json({ appointments: appointments || [], methodsByBusiness, policiesByBusiness });
 }

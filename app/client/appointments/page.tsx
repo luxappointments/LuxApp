@@ -26,12 +26,14 @@ export default function ClientAppointmentsPage() {
   const supabase = useMemo(() => getClientSupabase(), []);
   const [appointments, setAppointments] = useState<AppointmentItem[]>([]);
   const [methodsByBusiness, setMethodsByBusiness] = useState<Record<string, any[]>>({});
+  const [policiesByBusiness, setPoliciesByBusiness] = useState<Record<string, { min_cancel_minutes?: number }>>({});
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState<string | null>(null);
   const [uploadingId, setUploadingId] = useState<string | null>(null);
   const [methodById, setMethodById] = useState<Record<string, string>>({});
   const [payingId, setPayingId] = useState<string | null>(null);
   const [highlightedId, setHighlightedId] = useState<string | null>(null);
+  const [rescheduleNoteById, setRescheduleNoteById] = useState<Record<string, string>>({});
 
   const statusMeta: Record<string, { label: string; className: string; Icon: any }> = {
     pending_confirmation: { label: tx("Pendiente confirmación", "Pending confirmation"), className: "bg-amber-500/10 text-amber-300 border-amber-400/30", Icon: Clock3 },
@@ -63,6 +65,7 @@ export default function ClientAppointmentsPage() {
     } else {
       setAppointments(payload.appointments || []);
       setMethodsByBusiness(payload.methodsByBusiness || {});
+      setPoliciesByBusiness(payload.policiesByBusiness || {});
     }
     setLoading(false);
   }
@@ -138,6 +141,38 @@ export default function ClientAppointmentsPage() {
     }
   }
 
+  async function requestCancel(appointmentId: string) {
+    setMessage(null);
+    const res = await fetch("/api/client/appointments/cancel", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", ...(await authHeaders()) },
+      body: JSON.stringify({ appointmentId })
+    });
+    const payload = await res.json();
+    if (!res.ok) {
+      setMessage(payload.error || tx("No se pudo cancelar.", "Could not cancel."));
+      return;
+    }
+    setMessage(tx("Cancelación enviada.", "Cancellation submitted."));
+    await loadAppointments();
+  }
+
+  async function requestReschedule(appointmentId: string) {
+    setMessage(null);
+    const res = await fetch("/api/client/appointments/reschedule", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", ...(await authHeaders()) },
+      body: JSON.stringify({ appointmentId, note: rescheduleNoteById[appointmentId] || "" })
+    });
+    const payload = await res.json();
+    if (!res.ok) {
+      setMessage(payload.error || tx("No se pudo solicitar cambio.", "Could not request change."));
+      return;
+    }
+    setMessage(tx("Solicitud de cambio enviada.", "Reschedule request sent."));
+    setRescheduleNoteById((prev) => ({ ...prev, [appointmentId]: "" }));
+  }
+
   return (
     <Card>
       <h1 className="font-display text-3xl">{tx("Mis citas activas", "My active appointments")}</h1>
@@ -146,6 +181,8 @@ export default function ClientAppointmentsPage() {
         {appointments.map((item) => {
           const business = item.businesses;
           const methods = business?.id ? methodsByBusiness[business.id] || [] : [];
+          const policy = business?.id ? policiesByBusiness[business.id] : null;
+          const minCancelMinutes = policy?.min_cancel_minutes ?? 240;
           const hasStripe = methods.some((m: any) => m.method === "stripe");
           const deposit = item.required_deposit_cents || 0;
           const total = item.total_price_cents || 0;
@@ -155,6 +192,8 @@ export default function ClientAppointmentsPage() {
             className: "bg-silver/10 text-coolSilver border-silver/30",
             Icon: null
           };
+          const minutesBefore = Math.floor((new Date(item.starts_at).getTime() - Date.now()) / 60000);
+          const canRequestChange = minutesBefore >= minCancelMinutes && !["canceled_by_client", "canceled_by_business", "no_show", "completed"].includes(normalizedStatus);
           return (
             <div
               key={item.id}
@@ -276,6 +315,30 @@ export default function ClientAppointmentsPage() {
                       }}
                     />
                   </label>
+                </div>
+              ) : null}
+
+              {canRequestChange ? (
+                <div className="mt-3 space-y-2">
+                  <div className="rounded-2xl border border-silver/20 bg-richBlack/80 p-3">
+                    <p className="text-sm text-coolSilver">
+                      {tx("Puedes solicitar cambio o cancelación antes de", "You can request change or cancel before")} {Math.round(minCancelMinutes / 60)} {tx("horas", "hours")}
+                    </p>
+                    <Input
+                      placeholder={tx("Nota para el negocio (opcional)", "Note to the business (optional)")}
+                      value={rescheduleNoteById[item.id] || ""}
+                      onChange={(e) => setRescheduleNoteById((prev) => ({ ...prev, [item.id]: e.target.value }))}
+                      className="mt-2"
+                    />
+                    <div className="mt-2 flex flex-wrap gap-2">
+                      <Button variant="secondary" onClick={() => requestReschedule(item.id)}>
+                        {tx("Solicitar cambio", "Request change")}
+                      </Button>
+                      <Button variant="danger" onClick={() => requestCancel(item.id)}>
+                        {tx("Cancelar cita", "Cancel appointment")}
+                      </Button>
+                    </div>
+                  </div>
                 </div>
               ) : null}
             </div>
