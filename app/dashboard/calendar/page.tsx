@@ -33,6 +33,17 @@ const statusStyles: Record<string, string> = {
   no_show: "bg-red-500/15 text-red-300 border-red-400/30"
 };
 
+const statusLabels = {
+  pending_confirmation: { es: "Pendiente", en: "Pending" },
+  confirmed: { es: "Confirmada", en: "Confirmed" },
+  awaiting_payment: { es: "Pago pendiente", en: "Awaiting payment" },
+  paid: { es: "Pagada", en: "Paid" },
+  canceled_by_client: { es: "Cancelada cliente", en: "Canceled by client" },
+  canceled_by_business: { es: "Cancelada negocio", en: "Canceled by business" },
+  no_show: { es: "No show", en: "No show" },
+  completed: { es: "Completada", en: "Completed" }
+} as const;
+
 export default function CalendarPage() {
   const { locale, tx } = useLocale();
   const supabase = useMemo(() => getClientSupabase(), []);
@@ -126,7 +137,7 @@ export default function CalendarPage() {
                           <div className="flex items-center justify-between gap-2">
                             <p className="font-semibold text-softGold">{time}</p>
                             <span className={`rounded-full border px-2 py-0.5 text-[10px] ${statusStyles[item.status] || "bg-silver/10 text-coolSilver border-silver/30"}`}>
-                              {item.status}
+                              {statusLabels[item.status as keyof typeof statusLabels]?.[locale] || item.status}
                             </span>
                           </div>
                           <p className="mt-2 text-textWhite">{item.services?.name || tx("Servicio", "Service")}</p>

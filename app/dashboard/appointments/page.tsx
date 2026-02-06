@@ -53,6 +53,16 @@ export default function AppointmentsPage() {
     client_email: "",
     status: "confirmed"
   });
+  const statusMeta: Record<string, { label: string; className: string }> = {
+    pending_confirmation: { label: tx("Pendiente confirmación", "Pending confirmation"), className: "bg-amber-500/10 text-amber-300 border-amber-400/30" },
+    confirmed: { label: tx("Confirmada", "Confirmed"), className: "bg-emerald-500/10 text-emerald-300 border-emerald-400/30" },
+    awaiting_payment: { label: tx("Pendiente pago", "Awaiting payment"), className: "bg-gold/10 text-softGold border-gold/40" },
+    paid: { label: tx("Pagada", "Paid"), className: "bg-sky-500/10 text-sky-300 border-sky-400/30" },
+    canceled_by_client: { label: tx("Cancelada por cliente", "Canceled by client"), className: "bg-rose-500/10 text-rose-300 border-rose-400/30" },
+    canceled_by_business: { label: tx("Cancelada por negocio", "Canceled by business"), className: "bg-rose-500/10 text-rose-300 border-rose-400/30" },
+    no_show: { label: tx("No show", "No show"), className: "bg-rose-500/10 text-rose-300 border-rose-400/30" },
+    completed: { label: tx("Completada", "Completed"), className: "bg-indigo-500/10 text-indigo-300 border-indigo-400/30" }
+  };
 
   async function authHeaders() {
     const { data } = await supabase.auth.getSession();
@@ -312,7 +322,9 @@ export default function AppointmentsPage() {
                   </p>
                   </div>
                 </div>
-                <Badge>{item.status}</Badge>
+                <Badge className={statusMeta[item.status]?.className || "bg-silver/10 text-coolSilver border-silver/30"}>
+                  {statusMeta[item.status]?.label || item.status}
+                </Badge>
               </div>
               <p className="mt-2 text-xs text-coolSilver">{tx("Depósito requerido", "Required deposit")}: {item.required_deposit_percent}%</p>
               {item.external_payment_status === "submitted" && item.external_payment_proof_url ? (

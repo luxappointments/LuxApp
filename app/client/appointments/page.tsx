@@ -31,6 +31,17 @@ export default function ClientAppointmentsPage() {
   const [methodById, setMethodById] = useState<Record<string, string>>({});
   const [payingId, setPayingId] = useState<string | null>(null);
 
+  const statusMeta: Record<string, { label: string; className: string }> = {
+    pending_confirmation: { label: tx("Pendiente confirmación", "Pending confirmation"), className: "bg-amber-500/10 text-amber-300 border-amber-400/30" },
+    confirmed: { label: tx("Confirmada", "Confirmed"), className: "bg-emerald-500/10 text-emerald-300 border-emerald-400/30" },
+    awaiting_payment: { label: tx("Pendiente pago", "Awaiting payment"), className: "bg-gold/10 text-softGold border-gold/40" },
+    paid: { label: tx("Pagada", "Paid"), className: "bg-sky-500/10 text-sky-300 border-sky-400/30" },
+    canceled_by_client: { label: tx("Cancelada por cliente", "Canceled by client"), className: "bg-rose-500/10 text-rose-300 border-rose-400/30" },
+    canceled_by_business: { label: tx("Cancelada por negocio", "Canceled by business"), className: "bg-rose-500/10 text-rose-300 border-rose-400/30" },
+    no_show: { label: tx("No show", "No show"), className: "bg-rose-500/10 text-rose-300 border-rose-400/30" },
+    completed: { label: tx("Completada", "Completed"), className: "bg-indigo-500/10 text-indigo-300 border-indigo-400/30" }
+  };
+
   async function authHeaders() {
     const { data } = await supabase.auth.getSession();
     const headers: Record<string, string> = {};
@@ -132,6 +143,7 @@ export default function ClientAppointmentsPage() {
           const hasStripe = methods.some((m: any) => m.method === "stripe");
           const deposit = item.required_deposit_cents || 0;
           const total = item.total_price_cents || 0;
+          const statusView = statusMeta[item.status] || { label: item.status, className: "bg-silver/10 text-coolSilver border-silver/30" };
           return (
             <div key={item.id} className="rounded-xl border border-silver/20 bg-black/40 p-4">
               <div className="flex items-start justify-between gap-3">
@@ -146,12 +158,16 @@ export default function ClientAppointmentsPage() {
                     </p>
                   </div>
                 </div>
-                <span className="rounded-full border border-gold/30 px-3 py-1 text-xs text-softGold">{item.status}</span>
+                <span className={`rounded-full border px-3 py-1 text-xs ${statusView.className}`}>
+                  {statusView.label}
+                </span>
               </div>
 
               <div className="mt-2 text-sm text-coolSilver">
                 <p>{tx("Total", "Total")}: ${(total / 100).toFixed(2)}</p>
-                <p>{tx("Depósito requerido", "Required deposit")}: ${(deposit / 100).toFixed(2)}</p>
+                {deposit > 0 ? (
+                  <p className="text-softGold">{tx("Depósito requerido", "Required deposit")}: ${(deposit / 100).toFixed(2)}</p>
+                ) : null}
               </div>
 
               {item.status === "awaiting_payment" ? (
@@ -183,19 +199,23 @@ export default function ClientAppointmentsPage() {
                     {tx("Indica que ya pagaste el depósito", "Let us know you paid the deposit")}
                   </p>
                   {methods.length ? (
-                    <select
-                      className="h-11 w-full rounded-2xl border border-silver/20 bg-richBlack/80 px-3 text-textWhite"
-                      value={methodById[item.id] || ""}
-                      onChange={(e) => setMethodById((prev) => ({ ...prev, [item.id]: e.target.value }))}
-                    >
-                      <option value="">{tx("Selecciona método", "Select method")}</option>
-                      {methods.map((m: any) => (
-                        <option key={`${item.id}-${m.method}`} value={m.method}>
-                          {m.method}
-                        </option>
-                      ))}
-                    </select>
-                  ) : null}
+                    <>
+                      <div className="flex flex-wrap gap-2">
+                        {methods.map((m: any) => (
+                          <button
+                            key={`${item.id}-${m.method}`}
+                            type="button"
+                            className={`rounded-full border px-3 py-1 text-xs ${methodById[item.id] === m.method ? "border-gold/60 text-softGold" : "border-silver/30 text-coolSilver"}`}
+                            onClick={() => setMethodById((prev) => ({ ...prev, [item.id]: m.method }))}
+                          >
+                            {m.method}
+                          </button>
+                        ))}
+                      </div>
+                    </>
+                  ) : (
+                    <p className="text-xs text-coolSilver">{tx("Este negocio no configuró métodos de pago externos.", "This business has not configured external payment methods.")}</p>
+                  )}
                   <label className="flex w-full cursor-pointer items-center justify-between rounded-2xl border border-silver/20 bg-richBlack/80 px-4 py-3 text-sm text-coolSilver hover:border-softGold">
                     <span>{tx("Subir comprobante", "Upload proof")}</span>
                     <span className="rounded-xl border border-gold/30 px-3 py-1 text-xs text-softGold">{tx("Elegir archivo", "Choose file")}</span>
