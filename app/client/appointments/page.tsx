@@ -203,7 +203,7 @@ export default function ClientAppointmentsPage() {
                       ) : null}
                       {total > 0 && total !== deposit ? (
                         <Button
-                          variant="outline"
+                          variant="secondary"
                           disabled={payingId === item.id}
                           onClick={() => business?.id && startStripePayment(item.id, business.id, total)}
                         >
