@@ -31,6 +31,7 @@ export default function ClientAppointmentsPage() {
   const [uploadingId, setUploadingId] = useState<string | null>(null);
   const [methodById, setMethodById] = useState<Record<string, string>>({});
   const [payingId, setPayingId] = useState<string | null>(null);
+  const [highlightedId, setHighlightedId] = useState<string | null>(null);
 
   const statusMeta: Record<string, { label: string; className: string; Icon: any }> = {
     pending_confirmation: { label: tx("Pendiente confirmación", "Pending confirmation"), className: "bg-amber-500/10 text-amber-300 border-amber-400/30", Icon: Clock3 },
@@ -155,7 +156,33 @@ export default function ClientAppointmentsPage() {
             Icon: null
           };
           return (
-            <div key={item.id} className="rounded-xl border border-silver/20 bg-black/40 p-4">
+            <div
+              key={item.id}
+              className={`rounded-xl border border-silver/20 bg-black/40 p-4 transition ${highlightedId === item.id ? "ring-1 ring-gold/40" : ""}`}
+              role={item.status === "awaiting_payment" ? "button" : undefined}
+              tabIndex={item.status === "awaiting_payment" ? 0 : undefined}
+              onClick={() => {
+                if (item.status !== "awaiting_payment") return;
+                const targetId = `pay-${item.id}`;
+                setHighlightedId(item.id);
+                setTimeout(() => {
+                  const el = document.getElementById(targetId);
+                  if (el) el.scrollIntoView({ behavior: "smooth", block: "center" });
+                }, 0);
+              }}
+              onKeyDown={(e) => {
+                if (item.status !== "awaiting_payment") return;
+                if (e.key === "Enter" || e.key === " ") {
+                  e.preventDefault();
+                  const targetId = `pay-${item.id}`;
+                  setHighlightedId(item.id);
+                  setTimeout(() => {
+                    const el = document.getElementById(targetId);
+                    if (el) el.scrollIntoView({ behavior: "smooth", block: "center" });
+                  }, 0);
+                }
+              }}
+            >
               <div className="flex items-start justify-between gap-3">
                 <div className="flex items-center gap-3">
                   {business?.logo_url ? (
@@ -182,7 +209,7 @@ export default function ClientAppointmentsPage() {
               </div>
 
               {item.status === "awaiting_payment" ? (
-                <div className="mt-3 space-y-2">
+                <div id={`pay-${item.id}`} className="mt-3 space-y-2">
                   <div className="flex items-center justify-between rounded-2xl border border-gold/30 bg-gold/10 px-4 py-2 text-sm text-softGold">
                     <span className="inline-flex items-center gap-2">
                       <DollarSign className="h-4 w-4" />
