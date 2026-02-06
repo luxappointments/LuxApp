@@ -194,7 +194,7 @@ export default function ClientAppointmentsPage() {
                     <div className="flex flex-wrap gap-2">
                       {deposit > 0 ? (
                         <Button
-                          variant="lux"
+                          variant="default"
                           disabled={payingId === item.id}
                           onClick={() => business?.id && startStripePayment(item.id, business.id, deposit)}
                         >
