@@ -43,6 +43,8 @@ export default function AdminPage() {
   const [search, setSearch] = useState("");
   const [filterPlan, setFilterPlan] = useState("all");
   const [filterStatus, setFilterStatus] = useState("all");
+  const [pushTitle, setPushTitle] = useState("");
+  const [pushBody, setPushBody] = useState("");
 
   async function authHeaders() {
     const { data } = await supabase.auth.getSession();
@@ -190,6 +192,25 @@ export default function AdminPage() {
     await loadAudit();
   }
 
+  async function sendPushTest() {
+    const res = await fetch("/api/admin/push-test", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", ...(await authHeaders()) },
+      body: JSON.stringify({
+        title: pushTitle || "LuxApp",
+        body: pushBody || "Prueba de notificación push."
+      })
+    });
+    const payload = await res.json();
+    if (!res.ok) {
+      setMessage(payload.error || tx("No se pudo enviar.", "Could not send."));
+      return;
+    }
+    setMessage(tx("Notificación push enviada.", "Push notification sent."));
+    setPushTitle("");
+    setPushBody("");
+  }
+
   async function updateGlobalBlacklist(active: boolean) {
     if (!globalBlacklistEmail) {
       setMessage(tx("Email requerido.", "Email required."));
@@ -308,6 +329,23 @@ export default function AdminPage() {
             onChange={(e) => setBroadcastBody(e.target.value)}
           />
           <Button onClick={sendBroadcast}>{tx("Enviar", "Send")}</Button>
+        </div>
+      </Card>
+
+      <Card>
+        <h2 className="font-display text-2xl">{tx("Prueba OneSignal", "OneSignal test")}</h2>
+        <div className="mt-3 grid gap-2 md:grid-cols-[1fr_1fr_auto]">
+          <Input
+            placeholder={tx("Título (opcional)", "Title (optional)")}
+            value={pushTitle}
+            onChange={(e) => setPushTitle(e.target.value)}
+          />
+          <Input
+            placeholder={tx("Mensaje (opcional)", "Message (optional)")}
+            value={pushBody}
+            onChange={(e) => setPushBody(e.target.value)}
+          />
+          <Button onClick={sendPushTest}>{tx("Enviar prueba", "Send test")}</Button>
         </div>
       </Card>
 
