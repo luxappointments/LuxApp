@@ -4,6 +4,7 @@ import { z } from "zod";
 import { getAdminSupabase } from "@/lib/supabase/admin";
 import { getDashboardContext } from "@/lib/server/dashboard-auth";
 import { sendAppointmentStatusEmail } from "@/lib/notifications/email";
+import { createUserNotification } from "@/lib/notifications/in-app";
 
 const schema = z.object({
   appointmentId: z.string().uuid()
@@ -20,7 +21,7 @@ export async function POST(req: Request) {
   const admin = getAdminSupabase();
   const { data: appt, error: apptError } = await admin
     .from("appointments")
-    .select("id, starts_at, client_email, total_price_cents, required_deposit_cents")
+    .select("id, starts_at, client_email, total_price_cents, required_deposit_cents, customer_id")
     .eq("id", parsed.data.appointmentId)
     .eq("business_id", ctx.businessId)
     .single();
@@ -56,6 +57,29 @@ export async function POST(req: Request) {
     startsAt: appt.starts_at,
     status: nextStatus
   });
+
+  let clientUserId = appt.customer_id as string | null;
+  if (!clientUserId && appt.client_email) {
+    const { data: clientProfile } = await admin
+      .from("profiles")
+      .select("id")
+      .eq("email", appt.client_email)
+      .maybeSingle();
+    clientUserId = clientProfile?.id || null;
+  }
+
+  if (clientUserId) {
+    await createUserNotification({
+      userId: clientUserId,
+      businessId: ctx.businessId,
+      appointmentId: appt.id,
+      kind: "payment_confirmed",
+      payload: {
+        title: "Pago confirmado",
+        body: nextStatus === "paid" ? "Tu cita quedó pagada." : "Depósito confirmado. Tu cita está confirmada."
+      }
+    });
+  }
 
   await admin
     .from("notifications")

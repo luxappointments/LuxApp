@@ -29,6 +29,7 @@ export default function ClientAppointmentsPage() {
   const [message, setMessage] = useState<string | null>(null);
   const [uploadingId, setUploadingId] = useState<string | null>(null);
   const [methodById, setMethodById] = useState<Record<string, string>>({});
+  const [payingId, setPayingId] = useState<string | null>(null);
 
   async function authHeaders() {
     const { data } = await supabase.auth.getSession();
@@ -81,6 +82,45 @@ export default function ClientAppointmentsPage() {
     }
   }
 
+  async function startStripePayment(appointmentId: string, businessId: string, amountCents: number) {
+    try {
+      setPayingId(appointmentId);
+      setMessage(null);
+      const { data } = await supabase.auth.getSession();
+      const customerEmail = data.session?.user?.email;
+      if (!customerEmail) {
+        setMessage(tx("Debes iniciar sesión para pagar.", "You must be signed in to pay."));
+        return;
+      }
+
+      const res = await fetch("/api/stripe/checkout", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          mode: "deposit",
+          amountCents,
+          appointmentId,
+          businessId,
+          customerEmail
+        })
+      });
+
+      const payload = await res.json();
+      if (!res.ok) {
+        setMessage(payload.error || tx("No se pudo iniciar el pago.", "Could not start payment."));
+        return;
+      }
+
+      if (payload.url) {
+        window.location.href = payload.url;
+      }
+    } finally {
+      setPayingId(null);
+    }
+  }
+
   return (
     <Card>
       <h1 className="font-display text-3xl">{tx("Mis citas activas", "My active appointments")}</h1>
@@ -89,6 +129,7 @@ export default function ClientAppointmentsPage() {
         {appointments.map((item) => {
           const business = item.businesses;
           const methods = business?.id ? methodsByBusiness[business.id] || [] : [];
+          const hasStripe = methods.some((m: any) => m.method === "stripe");
           const deposit = item.required_deposit_cents || 0;
           const total = item.total_price_cents || 0;
           return (
@@ -115,7 +156,32 @@ export default function ClientAppointmentsPage() {
 
               {item.status === "awaiting_payment" ? (
                 <div className="mt-3 space-y-2">
-                  <p className="text-sm text-softGold">{tx("Indica que ya pagaste el depósito", "Let us know you paid the deposit")}</p>
+                  {hasStripe ? (
+                    <div className="flex flex-wrap gap-2">
+                      {deposit > 0 ? (
+                        <Button
+                          variant="lux"
+                          disabled={payingId === item.id}
+                          onClick={() => business?.id && startStripePayment(item.id, business.id, deposit)}
+                        >
+                          {tx("Pagar depósito", "Pay deposit")}
+                        </Button>
+                      ) : null}
+                      {total > 0 && total !== deposit ? (
+                        <Button
+                          variant="outline"
+                          disabled={payingId === item.id}
+                          onClick={() => business?.id && startStripePayment(item.id, business.id, total)}
+                        >
+                          {tx("Pagar total", "Pay full amount")}
+                        </Button>
+                      ) : null}
+                    </div>
+                  ) : null}
+
+                  <p className="text-sm text-softGold">
+                    {tx("Indica que ya pagaste el depósito", "Let us know you paid the deposit")}
+                  </p>
                   {methods.length ? (
                     <select
                       className="h-11 w-full rounded-2xl border border-silver/20 bg-richBlack/80 px-3 text-textWhite"

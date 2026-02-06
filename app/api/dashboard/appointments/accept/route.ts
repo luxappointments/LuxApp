@@ -4,7 +4,7 @@ import { z } from "zod";
 import { getAdminSupabase } from "@/lib/supabase/admin";
 import { getDashboardContext } from "@/lib/server/dashboard-auth";
 import { sendAppointmentStatusEmail } from "@/lib/notifications/email";
-import { createBusinessNotification } from "@/lib/notifications/in-app";
+import { createBusinessNotification, createUserNotification } from "@/lib/notifications/in-app";
 
 const schema = z.object({
   appointmentId: z.string().uuid()
@@ -21,7 +21,7 @@ export async function POST(req: Request) {
   const admin = getAdminSupabase();
   const { data: appt, error: apptError } = await admin
     .from("appointments")
-    .select("id, starts_at, required_deposit_percent, client_email")
+    .select("id, starts_at, required_deposit_percent, client_email, customer_id")
     .eq("id", parsed.data.appointmentId)
     .eq("business_id", ctx.businessId)
     .single();
@@ -55,6 +55,31 @@ export async function POST(req: Request) {
       body: `La cita fue aceptada y esta ${nextStatus}.`
     }
   });
+
+  let clientUserId = appt.customer_id as string | null;
+  if (!clientUserId && appt.client_email) {
+    const { data: clientProfile } = await admin
+      .from("profiles")
+      .select("id")
+      .eq("email", appt.client_email)
+      .maybeSingle();
+    clientUserId = clientProfile?.id || null;
+  }
+
+  if (clientUserId) {
+    await createUserNotification({
+      userId: clientUserId,
+      businessId: ctx.businessId,
+      appointmentId: appt.id,
+      kind: "appointment_accepted",
+      payload: {
+        title: "Tu cita fue aceptada",
+        body: nextStatus === "awaiting_payment"
+          ? "Tu cita requiere depósito. Completa el pago para confirmar."
+          : "Tu cita fue confirmada."
+      }
+    });
+  }
 
   await admin
     .from("notifications")

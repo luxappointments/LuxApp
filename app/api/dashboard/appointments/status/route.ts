@@ -4,7 +4,7 @@ import { z } from "zod";
 import { getAdminSupabase } from "@/lib/supabase/admin";
 import { getDashboardContext } from "@/lib/server/dashboard-auth";
 import { sendAppointmentStatusEmail } from "@/lib/notifications/email";
-import { createBusinessNotification } from "@/lib/notifications/in-app";
+import { createBusinessNotification, createUserNotification } from "@/lib/notifications/in-app";
 
 const schema = z.object({
   appointmentId: z.string().uuid(),
@@ -31,7 +31,7 @@ export async function POST(req: Request) {
   const admin = getAdminSupabase();
   const { data: appt, error: apptError } = await admin
     .from("appointments")
-    .select("id, starts_at, paid_at, stripe_payment_intent, client_email")
+    .select("id, starts_at, paid_at, stripe_payment_intent, client_email, customer_id")
     .eq("id", parsed.data.appointmentId)
     .eq("business_id", ctx.businessId)
     .single();
@@ -85,6 +85,29 @@ export async function POST(req: Request) {
       payload: {
         title: "Cliente cancelo la cita",
         body: "El cliente cancelo la cita."
+      }
+    });
+  }
+
+  let clientUserId = appt.customer_id as string | null;
+  if (!clientUserId && appt.client_email) {
+    const { data: clientProfile } = await admin
+      .from("profiles")
+      .select("id")
+      .eq("email", appt.client_email)
+      .maybeSingle();
+    clientUserId = clientProfile?.id || null;
+  }
+
+  if (clientUserId) {
+    await createUserNotification({
+      userId: clientUserId,
+      businessId: ctx.businessId,
+      appointmentId: appt.id,
+      kind: `appointment_${parsed.data.status}`,
+      payload: {
+        title: "Actualización de cita",
+        body: `Tu cita ahora está: ${parsed.data.status.replace(/_/g, " ")}.`
       }
     });
   }
