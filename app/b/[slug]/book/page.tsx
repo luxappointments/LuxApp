@@ -202,6 +202,8 @@ export default async function BookPage({ params }: { params: Promise<{ slug: str
         cancelMinutes={policies?.min_cancel_minutes ?? 240}
         lateToleranceMinutes={policies?.late_tolerance_minutes ?? 10}
         depositPercent={policies?.base_deposit_percent ?? 0}
+        depositMode={policies?.deposit_mode || "none"}
+        fixedDepositCents={policies?.fixed_deposit_cents ?? null}
         bookingLeadDays={policies?.booking_lead_days ?? 0}
         timeZone={business.timezone || "UTC"}
       />

@@ -38,6 +38,8 @@ export function BookingForm({
   cancelMinutes,
   lateToleranceMinutes,
   depositPercent,
+  depositMode,
+  fixedDepositCents,
   bookingLeadDays,
   timeZone
 }: {
@@ -48,6 +50,8 @@ export function BookingForm({
   cancelMinutes: number;
   lateToleranceMinutes: number;
   depositPercent: number;
+  depositMode?: "none" | "fixed" | "percent" | "full";
+  fixedDepositCents?: number | null;
   bookingLeadDays?: number;
   timeZone?: string;
 }) {
@@ -64,8 +68,8 @@ export function BookingForm({
   const [estimating, setEstimating] = useState(false);
   const [requiredDepositPercent, setRequiredDepositPercent] = useState(depositPercent);
   const [requiredDepositCents, setRequiredDepositCents] = useState(0);
-  const [depositMode, setDepositMode] = useState<"none" | "fixed" | "percent" | "full">("none");
-  const [fixedDepositCents, setFixedDepositCents] = useState<number | null>(null);
+  const [depositModeState, setDepositModeState] = useState<"none" | "fixed" | "percent" | "full">(depositMode || "none");
+  const [fixedDepositCentsState, setFixedDepositCentsState] = useState<number | null>(fixedDepositCents ?? null);
   const [profileName, setProfileName] = useState("");
   const [profilePhone, setProfilePhone] = useState("");
   const [profileEmail, setProfileEmail] = useState("");
@@ -119,7 +123,12 @@ export function BookingForm({
   const multiplier = guestCount === 1 ? 2 : 1;
   const totalPriceCents = basePriceCents * multiplier;
   const totalDurationMin = baseDurationMin * multiplier;
-  const depositCents = requiredDepositCents || Math.round(totalPriceCents * (requiredDepositPercent / 100));
+  const depositCents =
+    depositModeState === "fixed" && fixedDepositCentsState
+      ? fixedDepositCentsState
+      : depositModeState === "full"
+        ? totalPriceCents
+        : requiredDepositCents || Math.round(totalPriceCents * (requiredDepositPercent / 100));
 
   function toggleService(serviceId: string) {
     setSelectedSlotKey(null);
@@ -162,14 +171,13 @@ export function BookingForm({
       if (!selectedServices.length) return;
       const { data: sessionData } = await supabase.auth.getSession();
       const token = sessionData.session?.access_token;
-      if (!token) return;
       setEstimating(true);
       try {
         const res = await fetch("/api/bookings/estimate", {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`
+            ...(token ? { Authorization: `Bearer ${token}` } : {})
           },
           body: JSON.stringify({
             businessId,
@@ -183,8 +191,8 @@ export function BookingForm({
         if (!cancelled && res.ok) {
           setRequiredDepositPercent(payload.requiredDepositPercent ?? depositPercent);
           setRequiredDepositCents(payload.requiredDepositCents ?? 0);
-          setDepositMode(payload.deposit_mode || "none");
-          setFixedDepositCents(payload.fixed_deposit_cents ?? null);
+          setDepositModeState(payload.deposit_mode || depositModeState || "none");
+          setFixedDepositCentsState(payload.fixed_deposit_cents ?? fixedDepositCentsState ?? null);
         }
       } finally {
         if (!cancelled) setEstimating(false);
@@ -195,7 +203,7 @@ export function BookingForm({
     return () => {
       cancelled = true;
     };
-  }, [businessId, selectedServiceIds.join(","), guestCount, depositPercent, profileEmail, supabase]);
+  }, [businessId, selectedServiceIds.join(","), guestCount, depositPercent, profileEmail, supabase, depositModeState, fixedDepositCentsState]);
 
   useEffect(() => {
     let cancelled = false;
@@ -335,11 +343,11 @@ export function BookingForm({
                     <span className="text-xs text-mutedText">
                       {service.duration_min} min · {service.price_starts_at ? `${tx("Desde", "From")} $${(service.price_cents / 100).toFixed(2)}` : `$${(service.price_cents / 100).toFixed(2)}`}
                     </span>
-                    {depositMode === "fixed" && fixedDepositCents ? (
+                    {depositModeState === "fixed" && fixedDepositCentsState ? (
                       <span className="mt-1 block text-[11px] text-softGold">
-                        {tx("Depósito fijo", "Fixed deposit")}: ${(fixedDepositCents / 100).toFixed(2)}
+                        {tx("Depósito fijo", "Fixed deposit")}: ${(fixedDepositCentsState / 100).toFixed(2)}
                       </span>
-                    ) : depositMode === "full" ? (
+                    ) : depositModeState === "full" ? (
                       <span className="mt-1 block text-[11px] text-softGold">
                         {tx("Pago completo requerido", "Full payment required")}
                       </span>
@@ -368,7 +376,7 @@ export function BookingForm({
             <p>
               {tx("Depósito estimado", "Estimated deposit")}: ${(depositCents / 100).toFixed(2)} {estimating ? `(${tx("calculando", "calculating")}...)` : ""}
             </p>
-            {depositMode === "fixed" ? (
+            {depositModeState === "fixed" ? (
               <p className="text-xs text-mutedText">
                 {tx("Se cobra el depósito fijo sin importar los servicios.", "Fixed deposit is charged regardless of services.")}
               </p>
@@ -450,8 +458,8 @@ export function BookingForm({
         lateToleranceMinutes={lateToleranceMinutes}
         depositPercent={requiredDepositPercent}
         bookingLeadDays={bookingLeadDays}
-        depositMode={depositMode}
-        fixedDepositCents={fixedDepositCents}
+        depositMode={depositModeState}
+        fixedDepositCents={fixedDepositCentsState}
       />
 
       <Button className="w-full" size="lg" onClick={onConfirm} disabled={loading || !profileReady || !services.length || !slotOptions.length}>

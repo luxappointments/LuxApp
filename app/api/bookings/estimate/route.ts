@@ -15,26 +15,21 @@ const schema = z.object({
 
 export async function POST(req: Request) {
   const token = req.headers.get("authorization")?.replace("Bearer ", "");
-  if (!token) return NextResponse.json({ error: "Debes iniciar sesión." }, { status: 401 });
 
   const payload = await req.json();
   const parsed = schema.safeParse(payload);
   if (!parsed.success) return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
 
-  const anon = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!);
-  const { data: authData, error: authError } = await anon.auth.getUser(token);
-  if (authError || !authData.user) return NextResponse.json({ error: "Sesión inválida." }, { status: 401 });
-
-  const user = authData.user;
   const admin = getAdminSupabase();
+  let userEmail: string | null = null;
 
-  const { data: profile } = await admin
-    .from("profiles")
-    .select("email")
-    .eq("id", user.id)
-    .maybeSingle();
+  if (token) {
+    const anon = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!);
+    const { data: authData } = await anon.auth.getUser(token);
+    userEmail = authData.user?.email || null;
+  }
 
-  const safeEmail = profile?.email || user.email || parsed.data.clientEmail || "";
+  const safeEmail = userEmail || parsed.data.clientEmail || "";
 
   const { data: stats } = await admin
     .from("customer_global_stats")
