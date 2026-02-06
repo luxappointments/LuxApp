@@ -202,23 +202,31 @@ export default function ClientAppointmentsPage() {
               tabIndex={item.status === "awaiting_payment" ? 0 : undefined}
               onClick={() => {
                 if (item.status !== "awaiting_payment") return;
-                const targetId = `pay-${item.id}`;
-                setHighlightedId(item.id);
-                setTimeout(() => {
-                  const el = document.getElementById(targetId);
-                  if (el) el.scrollIntoView({ behavior: "smooth", block: "center" });
-                }, 0);
-              }}
-              onKeyDown={(e) => {
-                if (item.status !== "awaiting_payment") return;
-                if (e.key === "Enter" || e.key === " ") {
-                  e.preventDefault();
+                if (business?.slug) {
+                  window.location.href = `/b/${business.slug}/book?appointmentId=${item.id}#pay`;
+                } else {
                   const targetId = `pay-${item.id}`;
                   setHighlightedId(item.id);
                   setTimeout(() => {
                     const el = document.getElementById(targetId);
                     if (el) el.scrollIntoView({ behavior: "smooth", block: "center" });
                   }, 0);
+                }
+              }}
+              onKeyDown={(e) => {
+                if (item.status !== "awaiting_payment") return;
+                if (e.key === "Enter" || e.key === " ") {
+                  e.preventDefault();
+                  if (business?.slug) {
+                    window.location.href = `/b/${business.slug}/book?appointmentId=${item.id}#pay`;
+                  } else {
+                    const targetId = `pay-${item.id}`;
+                    setHighlightedId(item.id);
+                    setTimeout(() => {
+                      const el = document.getElementById(targetId);
+                      if (el) el.scrollIntoView({ behavior: "smooth", block: "center" });
+                    }, 0);
+                  }
                 }
               }}
             >
@@ -277,6 +285,14 @@ export default function ClientAppointmentsPage() {
                         </Button>
                       ) : null}
                     </div>
+                  ) : null}
+                  {business?.slug ? (
+                    <a
+                      href={`/b/${business.slug}/book?appointmentId=${item.id}#pay`}
+                      className="inline-flex items-center gap-2 rounded-full border border-gold/30 px-3 py-1 text-xs text-softGold hover:bg-gold/10"
+                    >
+                      {tx("Ir a pagar en el negocio", "Go to business payment")}
+                    </a>
                   ) : null}
 
                   <p className="text-sm text-softGold">
