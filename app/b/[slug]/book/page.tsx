@@ -52,18 +52,11 @@ export default async function BookPage({ params }: { params: Promise<{ slug: str
   const timeZone = business.timezone || "UTC";
   const zonedNow = toZonedTime(now, timeZone);
   const leadDays = policies?.booking_lead_days ?? 0;
-  const leadStart = leadDays > 0 ? startOfDay(addDays(now, leadDays)) : now;
   const primaryService = services[0];
   const primaryStaff = bookableStaff[0];
-  let slots = Array.from({ length: 10 }).map((_, index) => ({
-    staffId: primaryStaff?.id || "staff_1",
-    startsAt: new Date(Date.now() + (index + 1) * 60 * 60 * 1000).toISOString(),
-    endsAt: new Date(Date.now() + (index + 2) * 60 * 60 * 1000).toISOString(),
-    score: index,
-    recommended: index < 6
-  }));
+  let slots: Array<{ staffId: string; startsAt: string; endsAt: string; score: number; recommended: boolean }> = [];
 
-  if (primaryService && primaryStaff && process.env.SUPABASE_SERVICE_ROLE_KEY) {
+  if (primaryService && process.env.SUPABASE_SERVICE_ROLE_KEY) {
     const admin = getAdminSupabase();
     const leadStartZoned = leadDays > 0 ? startOfDay(addDays(zonedNow, leadDays)) : zonedNow;
     const rangeStartZoned = startOfDay(leadStartZoned);
@@ -81,7 +74,7 @@ export default async function BookPage({ params }: { params: Promise<{ slug: str
       .lte("starts_at", rangeEnd.toISOString());
 
     // When business has no explicit staff, we calculate availability against whole-business blocks.
-    if (!primaryStaff.id.startsWith("fallback-")) {
+    if (primaryStaff && !primaryStaff.id.startsWith("fallback-")) {
       busyQuery = busyQuery.eq("staff_id", primaryStaff.id);
     }
 
@@ -128,7 +121,7 @@ export default async function BookPage({ params }: { params: Promise<{ slug: str
       const combinedBusy = [...dayBusy, ...dayBlocks];
 
       return generateSmartSlots({
-        staffId: primaryStaff.id,
+        staffId: primaryStaff?.id || `business-${business.id}`,
         workStart: dayStart,
         workEnd: dayEnd,
         serviceDurationMin: primaryService.duration_min,

@@ -1,5 +1,6 @@
 import { createClient } from "@supabase/supabase-js";
 
+import { SINGLE_BUSINESS_SLUG_ALIASES } from "@/lib/single-business";
 import { getAdminSupabase } from "@/lib/supabase/admin";
 
 export interface DashboardContext {
@@ -29,35 +30,53 @@ export async function getDashboardContext(req: Request): Promise<{ ctx?: Dashboa
   const user = authData.user;
   const admin = getAdminSupabase();
 
-  const { data: ownedBusiness } = await admin
+  const { data: ownedBusinesses } = await admin
     .from("businesses")
-    .select("id")
+    .select("id, slug, created_at")
     .eq("owner_id", user.id)
     .order("created_at", { ascending: true })
-    .limit(1)
-    .maybeSingle();
+    .limit(50);
 
-  if (ownedBusiness?.id) {
+  const preferredOwned =
+    (ownedBusinesses || []).find((row: any) =>
+      SINGLE_BUSINESS_SLUG_ALIASES.includes(String(row.slug || "") as (typeof SINGLE_BUSINESS_SLUG_ALIASES)[number])
+    ) || (ownedBusinesses || [])[0];
+
+  if (preferredOwned?.id) {
     return {
       ctx: {
         userId: user.id,
         email: user.email ?? null,
-        businessId: ownedBusiness.id,
+        businessId: preferredOwned.id,
         isOwner: true
       }
     };
   }
 
-  const { data: membership } = await admin
+  const { data: memberships } = await admin
     .from("business_memberships")
     .select("business_id")
     .eq("user_id", user.id)
     .eq("is_active", true)
-    .order("created_at", { ascending: true })
-    .limit(1)
-    .maybeSingle();
+    .limit(50);
 
-  if (!membership?.business_id) {
+  const membershipBusinessIds = (memberships || []).map((row: any) => row.business_id).filter(Boolean);
+  if (membershipBusinessIds.length === 0) {
+    return { error: "No tienes negocio asignado", status: 403 };
+  }
+
+  const { data: memberBusinesses } = await admin
+    .from("businesses")
+    .select("id, slug, created_at")
+    .in("id", membershipBusinessIds)
+    .order("created_at", { ascending: true });
+
+  const preferredMemberBusiness =
+    (memberBusinesses || []).find((row: any) =>
+      SINGLE_BUSINESS_SLUG_ALIASES.includes(String(row.slug || "") as (typeof SINGLE_BUSINESS_SLUG_ALIASES)[number])
+    ) || (memberBusinesses || [])[0];
+
+  if (!preferredMemberBusiness?.id) {
     return { error: "No tienes negocio asignado", status: 403 };
   }
 
@@ -65,7 +84,7 @@ export async function getDashboardContext(req: Request): Promise<{ ctx?: Dashboa
     ctx: {
       userId: user.id,
       email: user.email ?? null,
-      businessId: membership.business_id,
+      businessId: preferredMemberBusiness.id,
       isOwner: false
     }
   };

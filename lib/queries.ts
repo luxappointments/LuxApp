@@ -49,15 +49,8 @@ export async function getBusinessBySlug(slug: string) {
               .from("businesses")
               .select("*")
               .in("slug", [...SINGLE_BUSINESS_SLUG_ALIASES])
-              .limit(1)
-              .maybeSingle()
-          ).data ||
-          (
-            await supabase
-              .from("businesses")
-              .select("*")
               .eq("is_active", true)
-              .order("priority_rank", { ascending: true })
+              .order("created_at", { ascending: true })
               .limit(1)
               .maybeSingle()
           ).data
