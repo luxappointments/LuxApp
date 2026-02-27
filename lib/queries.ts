@@ -1,6 +1,6 @@
 import { getServerSupabase } from "@/lib/supabase/server";
 import { BusinessCard, SearchFilters } from "@/types/domain";
-import { SINGLE_BUSINESS_SLUG } from "@/lib/single-business";
+import { SINGLE_BUSINESS_SLUG_ALIASES } from "@/lib/single-business";
 
 export async function searchBusinesses(filters: SearchFilters): Promise<BusinessCard[]> {
   try {
@@ -10,7 +10,7 @@ export async function searchBusinesses(filters: SearchFilters): Promise<Business
       .from("businesses")
       .select("id, slug, name, city, category, rating, cover_url, logo_url, available_today")
       .eq("is_active", true)
-      .eq("slug", SINGLE_BUSINESS_SLUG)
+      .in("slug", [...SINGLE_BUSINESS_SLUG_ALIASES])
       .order("priority_rank", { ascending: true });
 
     if (filters.city) query = query.ilike("city", `%${filters.city}%`);
@@ -40,7 +40,28 @@ export async function searchBusinesses(filters: SearchFilters): Promise<Business
 export async function getBusinessBySlug(slug: string) {
   try {
     const supabase = getServerSupabase();
-    const { data: business } = await supabase.from("businesses").select("*").eq("slug", slug).single();
+    const { data: directBusiness } = await supabase.from("businesses").select("*").eq("slug", slug).maybeSingle();
+    const business =
+      directBusiness ||
+      (SINGLE_BUSINESS_SLUG_ALIASES.includes(slug as (typeof SINGLE_BUSINESS_SLUG_ALIASES)[number])
+        ? (
+            await supabase
+              .from("businesses")
+              .select("*")
+              .in("slug", [...SINGLE_BUSINESS_SLUG_ALIASES])
+              .limit(1)
+              .maybeSingle()
+          ).data ||
+          (
+            await supabase
+              .from("businesses")
+              .select("*")
+              .eq("is_active", true)
+              .order("priority_rank", { ascending: true })
+              .limit(1)
+              .maybeSingle()
+          ).data
+        : null);
 
     if (!business) {
       return { business: null, services: [], staff: [], policies: null };

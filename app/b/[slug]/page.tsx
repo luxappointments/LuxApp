@@ -10,11 +10,11 @@ import { ReviewSection } from "@/components/reviews/review-section";
 import { FacebookIcon, InstagramIcon, TikTokIcon } from "@/components/icons/social";
 import { getBusinessBySlug } from "@/lib/queries";
 import { getServerLocale } from "@/lib/i18n/server";
-import { SINGLE_BUSINESS_SLUG } from "@/lib/single-business";
+import { SINGLE_BUSINESS_SLUG, isSingleBusinessSlug } from "@/lib/single-business";
 
 export default async function BusinessPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
-  if (slug !== SINGLE_BUSINESS_SLUG) {
+  if (!isSingleBusinessSlug(slug)) {
     redirect(`/b/${SINGLE_BUSINESS_SLUG}`);
   }
   const { business, services, staff, policies, reviews, specials } = await getBusinessBySlug(slug);
