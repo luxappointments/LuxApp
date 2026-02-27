@@ -1,6 +1,7 @@
 import Image from "next/image";
 import { addDays, addHours, endOfDay, startOfDay } from "date-fns";
 import { fromZonedTime, toZonedTime } from "date-fns-tz";
+import { redirect } from "next/navigation";
 import { BookingForm } from "@/components/booking/booking-form";
 import { Card } from "@/components/ui/card";
 import { ReviewSection } from "@/components/reviews/review-section";
@@ -9,6 +10,7 @@ import { generateSmartSlots } from "@/lib/booking/smart-slots";
 import { getServerLocale } from "@/lib/i18n/server";
 import { getAdminSupabase } from "@/lib/supabase/admin";
 import { getBusinessBySlug } from "@/lib/queries";
+import { SINGLE_BUSINESS_SLUG } from "@/lib/single-business";
 
 function applyBusinessTime(baseDate: Date, timeValue: string) {
   const [hhRaw, mmRaw] = timeValue.split(":");
@@ -21,6 +23,9 @@ function applyBusinessTime(baseDate: Date, timeValue: string) {
 
 export default async function BookPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
+  if (slug !== SINGLE_BUSINESS_SLUG) {
+    redirect(`/b/${SINGLE_BUSINESS_SLUG}/book`);
+  }
   const { business, services, staff, policies, paymentMethods, reviews } = await getBusinessBySlug(slug);
   const locale = await getServerLocale();
   const tx = (es: string, en: string) => (locale === "en" ? en : es);

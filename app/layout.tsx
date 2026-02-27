@@ -18,8 +18,8 @@ const playfair = Playfair_Display({
 });
 
 export const metadata: Metadata = {
-  title: "LuxApp | Citas Premium para Servicios",
-  description: "Plataforma SaaS multi-tenant de reservas premium para negocios de servicios locales",
+  title: "Diamond Studio by Nicole | Citas Premium",
+  description: "Reserva citas premium para Diamond Studio by Nicole.",
   manifest: "/manifest.webmanifest",
   themeColor: "#0B0B0F",
   icons: {

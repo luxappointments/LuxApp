@@ -1,5 +1,6 @@
 import { getServerSupabase } from "@/lib/supabase/server";
 import { BusinessCard, SearchFilters } from "@/types/domain";
+import { SINGLE_BUSINESS_SLUG } from "@/lib/single-business";
 
 export async function searchBusinesses(filters: SearchFilters): Promise<BusinessCard[]> {
   try {
@@ -9,6 +10,7 @@ export async function searchBusinesses(filters: SearchFilters): Promise<Business
       .from("businesses")
       .select("id, slug, name, city, category, rating, cover_url, logo_url, available_today")
       .eq("is_active", true)
+      .eq("slug", SINGLE_BUSINESS_SLUG)
       .order("priority_rank", { ascending: true });
 
     if (filters.city) query = query.ilike("city", `%${filters.city}%`);

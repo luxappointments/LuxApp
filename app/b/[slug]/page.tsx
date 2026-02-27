@@ -1,6 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { addDays } from "date-fns";
 
 import { Badge } from "@/components/ui/badge";
@@ -10,9 +10,13 @@ import { ReviewSection } from "@/components/reviews/review-section";
 import { FacebookIcon, InstagramIcon, TikTokIcon } from "@/components/icons/social";
 import { getBusinessBySlug } from "@/lib/queries";
 import { getServerLocale } from "@/lib/i18n/server";
+import { SINGLE_BUSINESS_SLUG } from "@/lib/single-business";
 
 export default async function BusinessPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
+  if (slug !== SINGLE_BUSINESS_SLUG) {
+    redirect(`/b/${SINGLE_BUSINESS_SLUG}`);
+  }
   const { business, services, staff, policies, reviews, specials } = await getBusinessBySlug(slug);
   const locale = await getServerLocale();
   const tx = (es: string, en: string) => (locale === "en" ? en : es);
