@@ -24,13 +24,11 @@ export const metadata: Metadata = {
   themeColor: "#0B0B0F",
   icons: {
     icon: [
-      { url: "/icons/icon-180.png", sizes: "180x180", type: "image/png" },
-      { url: "/icons/icon-192.png", sizes: "192x192", type: "image/png" },
-      { url: "/icons/icon-256.png", sizes: "256x256", type: "image/png" },
-      { url: "/icons/icon-384.png", sizes: "384x384", type: "image/png" },
-      { url: "/icons/icon-512.png", sizes: "512x512", type: "image/png" }
+      { url: "/favicon.ico?v=4", type: "image/x-icon" },
+      { url: "/favicon-32.png?v=4", sizes: "32x32", type: "image/png" }
     ],
-    apple: [{ url: "/icons/icon-180.png", sizes: "180x180", type: "image/png" }]
+    shortcut: [{ url: "/favicon.ico?v=4", type: "image/x-icon" }],
+    apple: [{ url: "/icons/icon-180.png?v=4", sizes: "180x180", type: "image/png" }]
   }
 };
 

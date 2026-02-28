@@ -35,25 +35,33 @@ export async function searchBusinesses(filters: SearchFilters): Promise<Business
   }
 }
 
-function getReadSupabase() {
+function getReadSupabases() {
+  const clients: Array<{ client: any; source: "admin" | "anon" }> = [];
   if (process.env.SUPABASE_SERVICE_ROLE_KEY && process.env.NEXT_PUBLIC_SUPABASE_URL) {
-    return getAdminSupabase();
+    clients.push({ client: getAdminSupabase(), source: "admin" });
   }
-  return getServerSupabase();
+  clients.push({ client: getServerSupabase(), source: "anon" });
+  return clients;
 }
 
 async function resolveDiamondBusiness(supabase: any, slug: string) {
-  const { data: directBusiness } = await supabase.from("businesses").select("*").eq("slug", slug).maybeSingle();
+  const { data: directBusiness, error: directBusinessError } = await supabase
+    .from("businesses")
+    .select("*")
+    .eq("slug", slug)
+    .maybeSingle();
+  if (directBusinessError) throw directBusinessError;
   if (directBusiness) return directBusiness;
 
   const isDiamondRoute = SINGLE_BUSINESS_SLUG_ALIASES.includes(slug as (typeof SINGLE_BUSINESS_SLUG_ALIASES)[number]);
   if (!isDiamondRoute) return null;
 
-  const { data: candidates } = await supabase
+  const { data: candidates, error: candidatesError } = await supabase
     .from("businesses")
     .select("*")
     .order("created_at", { ascending: true })
     .limit(100);
+  if (candidatesError) throw candidatesError;
 
   if (!candidates || candidates.length === 0) return null;
 
@@ -95,8 +103,22 @@ async function resolveDiamondBusiness(supabase: any, slug: string) {
 
 export async function getBusinessBySlug(slug: string) {
   try {
-    const supabase = getReadSupabase();
-    const business = await resolveDiamondBusiness(supabase, slug);
+    const candidates = getReadSupabases();
+    let supabase = candidates[0]?.client ?? getServerSupabase();
+    let business: any = null;
+
+    for (const source of candidates) {
+      try {
+        const resolved = await resolveDiamondBusiness(source.client, slug);
+        if (resolved) {
+          business = resolved;
+          supabase = source.client;
+          break;
+        }
+      } catch {
+        continue;
+      }
+    }
 
     if (!business) {
       return { business: null, services: [], staff: [], policies: null };

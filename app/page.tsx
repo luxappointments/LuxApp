@@ -7,23 +7,32 @@ export const revalidate = 0;
 
 export default async function Home() {
   const { business, services, specials } = await getBusinessBySlug(SINGLE_BUSINESS_SLUG);
+  const typedServices = (services || []) as Array<{
+    id: string;
+    name: string;
+    category?: string | null;
+    image_url?: string | null;
+    duration_min: number;
+    price_cents: number;
+    price_starts_at?: boolean | null;
+  }>;
 
   const gallery = [
     business?.cover_url ? { src: business.cover_url, alt: `${SINGLE_BUSINESS_NAME} cover` } : null,
     business?.logo_url ? { src: business.logo_url, alt: `${SINGLE_BUSINESS_NAME} logo` } : null,
-    ...(services || [])
-      .filter((item: any) => Boolean(item.image_url))
+    ...typedServices
+      .filter((item) => Boolean(item.image_url))
       .slice(0, 6)
-      .map((item: any) => ({ src: item.image_url as string, alt: item.name as string }))
+      .map((item) => ({ src: item.image_url as string, alt: item.name as string }))
   ].filter(Boolean) as Array<{ src: string; alt: string }>;
 
-  const categorized = Object.entries(
-    (services || []).reduce((acc: Record<string, any[]>, service: any) => {
+  const categorized: Array<[string, typeof typedServices]> = Object.entries(
+    typedServices.reduce((acc: Record<string, typeof typedServices>, service) => {
       const key = service.category || "General";
       if (!acc[key]) acc[key] = [];
       acc[key].push(service);
       return acc;
-    }, {})
+    }, {} as Record<string, typeof typedServices>)
   );
 
   return (
@@ -71,7 +80,7 @@ export default async function Home() {
               <div key={category} className="lux-card p-4">
                 <p className="text-sm text-softGold">{category}</p>
                 <div className="mt-3 grid gap-3 md:grid-cols-2">
-                  {items.map((service: any) => (
+                  {items.map((service) => (
                     <div key={service.id} className="rounded-2xl border border-silver/20 bg-black/40 p-3">
                       <p className="text-textWhite">{service.name}</p>
                       <p className="text-xs text-mutedText">

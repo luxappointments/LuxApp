@@ -24,6 +24,14 @@ export default async function BusinessPage({ params }: { params: Promise<{ slug:
   const locale = await getServerLocale();
   const tx = (es: string, en: string) => (locale === "en" ? en : es);
   const bookingWindowEnd = addDays(new Date(), 30);
+  const typedServices = (services || []) as Array<{
+    id: string;
+    name: string;
+    category?: string | null;
+    image_url?: string | null;
+    price_cents: number;
+    price_starts_at?: boolean | null;
+  }>;
   const publicStaff = (staff || []).filter((member: any) => Boolean(member.avatar_url));
   const socialLinks = [
     { key: "instagram", label: "Instagram", url: business?.instagram_url, icon: InstagramIcon },
@@ -103,12 +111,12 @@ export default async function BusinessPage({ params }: { params: Promise<{ slug:
           <h2 className="font-display text-2xl">{tx("Servicios", "Services")}</h2>
           <div className="mt-4 space-y-3 text-sm text-coolSilver">
             {Object.entries(
-              services.reduce((acc: Record<string, typeof services>, service) => {
+              typedServices.reduce((acc: Record<string, typeof typedServices>, service) => {
                 const key = service.category || tx("Sin categoría", "Uncategorized");
                 if (!acc[key]) acc[key] = [];
                 acc[key] = [...acc[key], service];
                 return acc;
-              }, {} as Record<string, typeof services>)
+              }, {} as Record<string, typeof typedServices>)
             ).map(([category, items]) => (
               <details key={category} className="rounded-2xl border border-silver/20 bg-black/40 p-3" open>
                 <summary className="cursor-pointer text-softGold">
@@ -172,7 +180,7 @@ export default async function BusinessPage({ params }: { params: Promise<{ slug:
         <h2 className="font-display text-2xl">{tx("Profesionales", "Professionals")}</h2>
         <p className="mt-1 text-sm text-mutedText">{tx("Equipo especializado que ofrece los servicios.", "Specialized team providing the services.")}</p>
         <div className="mt-4 grid gap-3 sm:grid-cols-2 md:grid-cols-3">
-          {publicStaff.map((member) => (
+          {publicStaff.map((member: any) => (
             <div key={member.id} className="flex items-center gap-3 rounded-2xl border border-silver/20 bg-black/40 p-3">
               {member.avatar_url ? (
                 <Image src={member.avatar_url} alt={member.display_name} width={44} height={44} className="h-11 w-11 rounded-xl object-cover" />
